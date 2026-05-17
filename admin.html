@@ -13,10 +13,16 @@
 <style>
 body{font-family:Arial;background:#f1f3f6;padding:10px;text-align:center}
 .box{background:white;padding:15px;border-radius:10px;max-width:430px;margin:auto}
-input,button{width:100%;padding:12px;font-size:17px;margin:7px 0;box-sizing:border-box}
-button{background:#4285f4;color:white;border:none;border-radius:6px}
+button{width:100%;padding:12px;font-size:17px;margin:7px 0;box-sizing:border-box;background:#4285f4;color:white;border:none;border-radius:6px}
 button:disabled{background:#999}
 .printBtn{background:#000}
+
+.numberGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
+.numBtn{font-size:24px;font-weight:bold;padding:15px 0;margin:0;background:#222}
+.numBtn.greenBtn{background:#18b85b}
+.numBtn.redBtn{background:#ff4b4b}
+.numBtn.violetBtn{background:#9b59b6}
+
 .delBtn{background:#ff4b4b;padding:6px;font-size:13px}
 .editBtn{background:#28a745;padding:6px;font-size:13px}
 
@@ -49,6 +55,7 @@ position:fixed;top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center
 }
 .popupBox{background:white;padding:15px;border-radius:10px;width:90%;max-width:350px}
+.editGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
 
 .printOnly{display:none}
 
@@ -70,8 +77,20 @@ background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center
 <h2>Admin Panel</h2>
 
 <div class="noPrint">
-  <input type="number" id="num" placeholder="Number डालो">
-  <button id="saveBtn" onclick="addData(event)">Save</button>
+  <div class="numberGrid">
+    <button class="numBtn greenBtn" onclick="addData(1,this)">1</button>
+    <button class="numBtn redBtn" onclick="addData(2,this)">2</button>
+    <button class="numBtn greenBtn" onclick="addData(3,this)">3</button>
+    <button class="numBtn redBtn" onclick="addData(4,this)">4</button>
+    <button class="numBtn violetBtn" onclick="addData(5,this)">5</button>
+
+    <button class="numBtn redBtn" onclick="addData(6,this)">6</button>
+    <button class="numBtn greenBtn" onclick="addData(7,this)">7</button>
+    <button class="numBtn redBtn" onclick="addData(8,this)">8</button>
+    <button class="numBtn greenBtn" onclick="addData(9,this)">9</button>
+    <button class="numBtn redBtn" onclick="addData(0,this)">0</button>
+  </div>
+
   <button class="printBtn" onclick="printData()">Print</button>
 </div>
 
@@ -100,8 +119,21 @@ background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center
 <div class="popup" id="popup">
   <div class="popupBox">
     <h3>Edit Data</h3>
-    <input type="number" id="editNum">
-    <button onclick="updateData()">Update</button>
+
+    <div class="editGrid">
+      <button class="numBtn greenBtn" onclick="updateData(1)">1</button>
+      <button class="numBtn redBtn" onclick="updateData(2)">2</button>
+      <button class="numBtn greenBtn" onclick="updateData(3)">3</button>
+      <button class="numBtn redBtn" onclick="updateData(4)">4</button>
+      <button class="numBtn violetBtn" onclick="updateData(5)">5</button>
+
+      <button class="numBtn redBtn" onclick="updateData(6)">6</button>
+      <button class="numBtn greenBtn" onclick="updateData(7)">7</button>
+      <button class="numBtn redBtn" onclick="updateData(8)">8</button>
+      <button class="numBtn greenBtn" onclick="updateData(9)">9</button>
+      <button class="numBtn redBtn" onclick="updateData(0)">0</button>
+    </div>
+
     <button onclick="closePopup()" style="background:#999">Cancel</button>
   </div>
 </div>
@@ -154,25 +186,11 @@ function getAuto(num){
   return rule[Number(num)];
 }
 
-window.addData = async function(event){
-  const btn = event.target;
-  const input = document.getElementById("num");
-  let num = input.value.trim();
-
-  if(num === ""){
-    alert("Number डालो");
-    return;
-  }
-
+window.addData = async function(num, btn){
   let auto = getAuto(num);
 
-  if(!auto){
-    alert("0 से 9 तक number डालो");
-    return;
-  }
-
   try{
-    btn.innerText = "Saving...";
+    btn.innerText = "...";
     btn.disabled = true;
 
     await addDoc(colRef, {
@@ -182,17 +200,15 @@ window.addData = async function(event){
       createdAt:Date.now()
     });
 
-    input.value = "";
-    btn.innerText = "Saved";
+    btn.innerText = num;
 
     setTimeout(()=>{
-      btn.innerText = "Save";
       btn.disabled = false;
-    },800);
+    },500);
 
   }catch(error){
     alert("Save Error: " + error.message);
-    btn.innerText = "Save";
+    btn.innerText = num;
     btn.disabled = false;
   }
 };
@@ -259,7 +275,6 @@ window.printData = function(){
 
 window.openPopup = function(index){
   editId = data[index].id;
-  document.getElementById("editNum").value = data[index].num;
   document.getElementById("popup").style.display = "flex";
 };
 
@@ -267,14 +282,8 @@ window.closePopup = function(){
   document.getElementById("popup").style.display = "none";
 };
 
-window.updateData = async function(){
-  let num = document.getElementById("editNum").value.trim();
+window.updateData = async function(num){
   let auto = getAuto(num);
-
-  if(!auto){
-    alert("0 से 9 तक number डालो");
-    return;
-  }
 
   try{
     await updateDoc(doc(db, "numberData", editId), {
