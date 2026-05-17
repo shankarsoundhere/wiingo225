@@ -1,7 +1,7 @@
 {
   "name": "Colur",
   "short_name": "Colur",
-  "start_url": "./wiingo225/",
+  "start_url": "/wiingo225/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
