@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Shankar App</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#000,#123,#28a745);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+  color:white;
+  text-align:center;
+}
+
+.box{
+  width:100%;
+  max-width:350px;
+  background:rgba(255,255,255,0.1);
+  padding:25px;
+  border-radius:15px;
+  backdrop-filter:blur(10px);
+}
+
+h1{
+  margin-bottom:20px;
+}
+
+button{
+  width:100%;
+  padding:15px;
+  margin:10px 0;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.viewBtn{
+  background:#28a745;
+  color:white;
+}
+
+.adminBtn{
+  background:#ff4b4b;
+  color:white;
+}
+
+button:active{
+  transform:scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h1>Shankar App</h1>
+
+  <button class="viewBtn" onclick="openView()">View Page</button>
+  <button class="adminBtn" onclick="openAdmin()">Admin Panel</button>
+</div>
+
+<script>
+function openView(){
+  location.href = "view.html";   // अपना view page
+}
+
+function openAdmin(){
+  location.href = "admin.html"; // अपना admin page
+}
+</script>
+
+<script src="pwa.js"></script>
+
+</body>
+</html>

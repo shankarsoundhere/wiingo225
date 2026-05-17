@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 Digit Search</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+body{
+  font-family:Arial;
+  background:#f1f3f6;
+  padding:10px;
+  text-align:center;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  max-width:420px;
+  margin:auto;
+}
+
+input,button{
+  width:100%;
+  padding:12px;
+  font-size:18px;
+  margin:8px 0;
+  box-sizing:border-box;
+}
+
+button{
+  background:#4285f4;
+  color:white;
+  border:none;
+  border-radius:6px;
+}
+
+.result{
+  margin-top:20px;
+}
+
+.title{
+  background:#4285f4;
+  color:white;
+  padding:8px;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:6px 6px 0 0;
+  margin-top:15px;
+}
+
+.row{
+  display:flex;
+  align-items:center;
+  background:white;
+  border:1px solid #ddd;
+  padding:12px 5px;
+  font-size:22px;
+}
+
+.col{
+  flex:1;
+  text-align:center;
+}
+
+.num{
+  font-size:38px;
+  font-weight:bold;
+}
+
+.type{
+  font-size:26px;
+  color:#222;
+}
+
+.green{color:#18b85b;}
+.red{color:#ff4b4b;}
+.violet{color:#9b59b6;}
+
+.dot{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+.dot.green{background:#18b85b;}
+.dot.red{background:#ff4b4b;}
+.dot.violet{background:#9b59b6;}
+
+.doubleDot{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+}
+
+.notfound{
+  margin-top:20px;
+  font-size:20px;
+  font-weight:bold;
+  color:red;
+}
+
+.loading{
+  margin-top:20px;
+  font-size:18px;
+  color:#333;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>3 Digit Search</h2>
+
+  <input type="text" id="search" placeholder="जैसे 289 डालो" maxlength="3">
+  <button onclick="findData()">Search</button>
+
+  <div class="result" id="output">
+    <div class="loading">Firebase से data load हो रहा है...</div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  db,
+  collection,
+  onSnapshot,
+  query,
+  orderBy
+} from "./firebase.js";
+
+import "./pwa.js";
+
+let data = [];
+
+const colRef = collection(db, "numberData");
+const q = query(colRef, orderBy("createdAt", "desc"));
+
+onSnapshot(q, (snapshot)=>{
+  data = [];
+
+  snapshot.forEach((doc)=>{
+    data.push({
+      id: doc.id,
+      ...doc.data()
+    });
+  });
+
+  document.getElementById("output").innerHTML = "Result यहाँ दिखेगा";
+});
+
+window.findData = function(){
+  const input = document.getElementById("search").value.trim();
+  const output = document.getElementById("output");
+
+  if(data.length === 0){
+    output.innerHTML = `<div class="notfound">अभी Firebase में data नहीं है</div>`;
+    return;
+  }
+
+  if(input.length !== 3 || isNaN(input)){
+    output.innerHTML = `<div class="notfound">कृपया सिर्फ 3 digit डालो</div>`;
+    return;
+  }
+
+  const a = Number(input[0]);
+  const b = Number(input[1]);
+  const c = Number(input[2]);
+
+  for(let i = 0; i <= data.length - 3; i++){
+    if(
+      data[i].num === a &&
+      data[i+1].num === b &&
+      data[i+2].num === c
+    ){
+      const aageWala = data[i-1];
+      const pichheWala = data[i+3];
+
+      output.innerHTML = `
+        <div class="title">आगे वाला</div>
+        ${showItemRow(aageWala)}
+
+        <div class="title">पीछे वाला</div>
+        ${showItemRow(pichheWala)}
+      `;
+      return;
+    }
+  }
+
+  output.innerHTML = `<div class="notfound">Not Found</div>`;
+};
+
+function showItemRow(item){
+  if(!item){
+    return `<div class="row"><div class="col">नहीं है</div></div>`;
+  }
+
+  return `
+    <div class="row">
+      <div class="col num ${item.color === "double" ? "violet" : item.color}">
+        ${item.num}
+      </div>
+
+      <div class="col type">${item.type}</div>
+
+      <div class="col">
+        ${showColor(item.color)}
+      </div>
+    </div>
+  `;
+}
+
+function showColor(color){
+  if(color === "double"){
+    return `
+      <div class="doubleDot">
+        <span class="dot green"></span>
+        <span class="dot violet"></span>
+      </div>
+    `;
+  }
+
+  return `<span class="dot ${color}"></span>`;
+}
+</script>
+
+</body>
+</html>
