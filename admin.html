@@ -15,6 +15,7 @@ body{font-family:Arial;background:#f1f3f6;padding:10px;text-align:center}
 .box{background:white;padding:15px;border-radius:10px;max-width:430px;margin:auto}
 input,button{width:100%;padding:12px;font-size:17px;margin:7px 0;box-sizing:border-box}
 button{background:#4285f4;color:white;border:none;border-radius:6px}
+button:disabled{background:#999}
 .printBtn{background:#000}
 .delBtn{background:#ff4b4b;padding:6px;font-size:13px}
 .editBtn{background:#28a745;padding:6px;font-size:13px}
@@ -70,7 +71,7 @@ background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center
 
 <div class="noPrint">
   <input type="number" id="num" placeholder="Number डालो">
-  <button onclick="addData()">Save</button>
+  <button id="saveBtn" onclick="addData(event)">Save</button>
   <button class="printBtn" onclick="printData()">Print</button>
 </div>
 
@@ -107,8 +108,15 @@ background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center
 
 <script type="module">
 import {
-  db, collection, addDoc, onSnapshot,
-  deleteDoc, doc, updateDoc, query, orderBy
+  db,
+  collection,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  updateDoc,
+  query,
+  orderBy
 } from "./firebase.js";
 
 import "./pwa.js";
@@ -138,14 +146,24 @@ onSnapshot(q, (snapshot)=>{
     data.push({ id:d.id, ...d.data() });
   });
   renderAll();
+}, (error)=>{
+  alert("Firebase Load Error: " + error.message);
 });
 
 function getAuto(num){
   return rule[Number(num)];
 }
 
-window.addData = async function(){
-  let num = document.getElementById("num").value.trim();
+window.addData = async function(event){
+  const btn = event.target;
+  const input = document.getElementById("num");
+  let num = input.value.trim();
+
+  if(num === ""){
+    alert("Number डालो");
+    return;
+  }
+
   let auto = getAuto(num);
 
   if(!auto){
@@ -153,14 +171,30 @@ window.addData = async function(){
     return;
   }
 
-  await addDoc(colRef, {
-    num:Number(num),
-    type:auto.type,
-    color:auto.color,
-    createdAt:Date.now()
-  });
+  try{
+    btn.innerText = "Saving...";
+    btn.disabled = true;
 
-  document.getElementById("num").value="";
+    await addDoc(colRef, {
+      num:Number(num),
+      type:auto.type,
+      color:auto.color,
+      createdAt:Date.now()
+    });
+
+    input.value = "";
+    btn.innerText = "Saved";
+
+    setTimeout(()=>{
+      btn.innerText = "Save";
+      btn.disabled = false;
+    },800);
+
+  }catch(error){
+    alert("Save Error: " + error.message);
+    btn.innerText = "Save";
+    btn.disabled = false;
+  }
 };
 
 function renderAll(){
@@ -171,6 +205,7 @@ function renderAll(){
 function renderAdmin(){
   let list = document.getElementById("adminList");
   list.innerHTML = "";
+
   data.forEach((item,index)=>{
     list.innerHTML += createRow(item,index,false);
   });
@@ -179,6 +214,7 @@ function renderAdmin(){
 function renderPrint(){
   let list = document.getElementById("printList");
   list.innerHTML = "";
+
   [...data].reverse().forEach((item)=>{
     list.innerHTML += createRow(item,null,true);
   });
@@ -240,17 +276,25 @@ window.updateData = async function(){
     return;
   }
 
-  await updateDoc(doc(db, "numberData", editId), {
-    num:Number(num),
-    type:auto.type,
-    color:auto.color
-  });
+  try{
+    await updateDoc(doc(db, "numberData", editId), {
+      num:Number(num),
+      type:auto.type,
+      color:auto.color
+    });
 
-  closePopup();
+    closePopup();
+  }catch(error){
+    alert("Update Error: " + error.message);
+  }
 };
 
 window.deleteItem = async function(id){
-  await deleteDoc(doc(db, "numberData", id));
+  try{
+    await deleteDoc(doc(db, "numberData", id));
+  }catch(error){
+    alert("Delete Error: " + error.message);
+  }
 };
 </script>
 
