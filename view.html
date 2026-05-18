@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3 Digit Search</title>
+<title>Number Search</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
@@ -118,9 +118,9 @@ button{
 <body>
 
 <div class="box">
-  <h2>Colur Trading</h2>
+  <h2>Colour Trading</h2>
 
-  <input type="text" id="search" placeholder="Fill up the number" maxlength="3">
+  <input type="text" id="search" placeholder="2, 3 या 4 अंक डालें" maxlength="4">
   <button onclick="findData()">Search</button>
 
   <div class="result" id="output">
@@ -166,23 +166,27 @@ window.findData = function(){
     return;
   }
 
-  if(input.length !== 3 || isNaN(input)){
-    output.innerHTML = `<div class="notfound">कृपया सिर्फ 3 digit डालो</div>`;
+  if(!/^[0-9]{2,4}$/.test(input)){
+    output.innerHTML = `<div class="notfound">कृपया सिर्फ 2 से 4 digit डालो</div>`;
     return;
   }
 
-  const a = Number(input[0]);
-  const b = Number(input[1]);
-  const c = Number(input[2]);
+  const searchNums = input.split("").map(n => Number(n));
+  const len = searchNums.length;
 
-  for(let i = 0; i <= data.length - 3; i++){
-    if(
-      data[i].num === a &&
-      data[i+1].num === b &&
-      data[i+2].num === c
-    ){
-      const aageWala = data[i-1];
-      const pichheWala = data[i+3];
+  for(let i = 0; i <= data.length - len; i++){
+    let match = true;
+
+    for(let j = 0; j < len; j++){
+      if(Number(data[i + j].num) !== searchNums[j]){
+        match = false;
+        break;
+      }
+    }
+
+    if(match){
+      const aageWala = data[i - 1];
+      const pichheWala = data[i + len];
 
       output.innerHTML = `
         <div class="title">आगे वाला</div>
