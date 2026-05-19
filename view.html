@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Number Search</title>
 
+<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon-192.png">
@@ -16,6 +18,7 @@ body{
   background:#f1f3f6;
   padding:10px;
   text-align:center;
+  margin:0;
 }
 
 .box{
@@ -118,56 +121,92 @@ button{
 <body>
 
 <div class="box">
-  <h2>Colour Trading</h2>
 
-  <input type="text" id="search" placeholder="2, 3 या 4 अंक डालें" maxlength="4">
-  <button onclick="findData()">Search</button>
+<h2>Colour Trading</h2>
 
-  <div class="result" id="output">
-    <div class="loading">Firebase से data load हो रहा है...</div>
-  </div>
+<input type="file" id="fileInput" accept=".json">
+
+<input type="text" id="search" placeholder="2, 3 या 4 अंक डालें" maxlength="4">
+
+<button onclick="findData()">Search</button>
+
+<div class="result" id="output">
+  <div class="loading">पहले JSON file choose करें</div>
 </div>
 
-<script type="module">
-import {
-  db,
-  collection,
-  onSnapshot,
-  query,
-  orderBy
-} from "./firebase.js";
+</div>
 
-import "./pwa.js";
-
+<script>
 let data = [];
 
-const colRef = collection(db, "numberData");
-const q = query(colRef, orderBy("createdAt", "desc"));
+/* JSON FILE LOAD */
+document.getElementById("fileInput").addEventListener("change", function(){
 
-onSnapshot(q, (snapshot)=>{
-  data = [];
+  const file = this.files[0];
+  const output = document.getElementById("output");
 
-  snapshot.forEach((doc)=>{
-    data.push({
-      id: doc.id,
-      ...doc.data()
-    });
-  });
+  if(!file) return;
 
-  document.getElementById("output").innerHTML = "Result यहाँ दिखेगा";
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+
+    try{
+
+      data = JSON.parse(e.target.result);
+
+      data.sort((a,b)=>{
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+      });
+
+      output.innerHTML = `
+        <div class="loading">
+          Data load हो गया, अब search करें
+        </div>
+      `;
+
+    }catch(err){
+
+      data = [];
+
+      output.innerHTML = `
+        <div class="notfound">
+          Wrong JSON File
+        </div>
+      `;
+
+    }
+
+  };
+
+  reader.readAsText(file);
+
 });
 
-window.findData = function(){
+function findData(){
+
   const input = document.getElementById("search").value.trim();
   const output = document.getElementById("output");
 
   if(data.length === 0){
-    output.innerHTML = `<div class="notfound">अभी Firebase में data नहीं है</div>`;
+
+    output.innerHTML = `
+      <div class="notfound">
+        पहले JSON file choose करें
+      </div>
+    `;
+
     return;
   }
 
   if(!/^[0-9]{2,4}$/.test(input)){
-    output.innerHTML = `<div class="notfound">कृपया सिर्फ 2 से 4 digit डालो</div>`;
+
+    output.innerHTML = `
+      <div class="notfound">
+        कृपया सिर्फ 2 से 4 digit डालो
+      </div>
+    `;
+
     return;
   }
 
@@ -175,16 +214,20 @@ window.findData = function(){
   const len = searchNums.length;
 
   for(let i = 0; i <= data.length - len; i++){
+
     let match = true;
 
     for(let j = 0; j < len; j++){
+
       if(Number(data[i + j].num) !== searchNums[j]){
         match = false;
         break;
       }
+
     }
 
     if(match){
+
       const aageWala = data[i - 1];
       const pichheWala = data[i + len];
 
@@ -195,44 +238,87 @@ window.findData = function(){
         <div class="title">पीछे वाला</div>
         ${showItemRow(pichheWala)}
       `;
+
       return;
     }
+
   }
 
-  output.innerHTML = `<div class="notfound">Not Found</div>`;
-};
+  output.innerHTML = `
+    <div class="notfound">
+      Not Found
+    </div>
+  `;
+
+}
 
 function showItemRow(item){
+
   if(!item){
-    return `<div class="row"><div class="col">नहीं है</div></div>`;
+    return `
+      <div class="row">
+        <div class="col">नहीं है</div>
+      </div>
+    `;
+  }
+
+  let color = item.color;
+
+  if(color === "violet"){
+    color = "double";
   }
 
   return `
     <div class="row">
-      <div class="col num ${item.color === "double" ? "violet" : item.color}">
+
+      <div class="col num ${color === "double" ? "violet" : color}">
         ${item.num}
       </div>
 
-      <div class="col type">${item.type}</div>
+      <div class="col type">
+        ${item.type}
+      </div>
 
       <div class="col">
-        ${showColor(item.color)}
+        ${showColor(color)}
       </div>
+
     </div>
   `;
 }
 
 function showColor(color){
+
   if(color === "double"){
+
     return `
       <div class="doubleDot">
         <span class="dot green"></span>
         <span class="dot violet"></span>
       </div>
     `;
+
   }
 
   return `<span class="dot ${color}"></span>`;
+}
+
+/* PWA SERVICE WORKER */
+if("serviceWorker" in navigator){
+
+  window.addEventListener("load", ()=>{
+
+    navigator.serviceWorker
+    .register("./service-worker.js")
+    .then(()=>{
+      console.log("Service Worker Registered");
+    })
+    .catch(err=>{
+      console.log("Service Worker Error", err);
+    });
+
+  });
+
 }
 </script>
 
