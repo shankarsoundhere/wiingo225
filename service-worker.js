@@ -1,4 +1,4 @@
-const CACHE_NAME = "json-result-finder-v2";
+const CACHE_NAME = "wiingo225";
 
 const FILES_TO_CACHE = [
   "./",
