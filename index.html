@@ -134,6 +134,7 @@ button{
 let data = [];
 let typingTimer = null;
 
+// JSON LOAD
 document.getElementById("jsonFile").addEventListener("change", function(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -152,6 +153,7 @@ document.getElementById("jsonFile").addEventListener("change", function(e){
         return item.issueNumber !== undefined && item.number !== undefined;
       });
 
+      // issue number के हिसाब से auto serial sort
       data.sort(function(a,b){
         return Number(a.issueNumber) - Number(b.issueNumber);
       });
@@ -172,11 +174,13 @@ document.getElementById("jsonFile").addEventListener("change", function(e){
   reader.readAsText(file);
 });
 
+// BIG / SMALL
 function getBigSmall(num){
   num = Number(num);
   return num >= 5 ? "BIG" : "SMALL";
 }
 
+// COLOR
 function getColorByNumber(num){
   num = Number(num);
 
@@ -186,6 +190,22 @@ function getColorByNumber(num){
   return "GREEN";
 }
 
+// ISSUE NUMBER
+function getIssueNum(item){
+  return Number(item.issueNumber);
+}
+
+// SERIAL CHECK
+function isSerialWise(startIndex, endIndex){
+  for(let i = startIndex; i < endIndex; i++){
+    if(getIssueNum(data[i + 1]) !== getIssueNum(data[i]) + 1){
+      return false;
+    }
+  }
+  return true;
+}
+
+// TERMINAL EFFECT
 function terminalType(lines){
   const box = document.getElementById("resultBox");
 
@@ -209,6 +229,7 @@ function terminalType(lines){
   typing();
 }
 
+// FINAL RESULT
 function showFinalOnly(item, previousItem){
   const number = String(item.number);
   const bigSmall = getBigSmall(number);
@@ -243,11 +264,12 @@ function showFinalOnly(item, previousItem){
   `;
 }
 
+// SEARCH EFFECT
 function showTerminalThenFinal(item, previousItem){
   terminalType([
     "> CONNECTING DATABASE...",
     "> MATCH FOUND...",
-    "> DECODING SIGNAL...",
+    "> SERIAL CHECK OK...",
     "> GENERATING RESULT..."
   ]);
 
@@ -256,6 +278,7 @@ function showTerminalThenFinal(item, previousItem){
   },1600);
 }
 
+// SEARCH
 function searchData(){
   const q = document.getElementById("searchBox").value.trim();
 
@@ -269,20 +292,25 @@ function searchData(){
     return;
   }
 
+  // MODE 1: ISSUE LAST DIGIT SEARCH
   if(q.length >= 4){
     const issueIndex = data.findIndex(function(item){
       return String(item.issueNumber).endsWith(q);
     });
 
     if(issueIndex !== -1){
-      showTerminalThenFinal(
-        data[issueIndex],
-        issueIndex > 0 ? data[issueIndex - 1] : null
-      );
+      const previousItem =
+        issueIndex > 0 &&
+        getIssueNum(data[issueIndex]) === getIssueNum(data[issueIndex - 1]) + 1
+          ? data[issueIndex - 1]
+          : null;
+
+      showTerminalThenFinal(data[issueIndex], previousItem);
       return;
     }
   }
 
+  // MODE 2: PATTERN SEARCH ONLY SERIAL WISE
   for(let i = 0; i <= data.length - q.length - 1; i++){
 
     let pattern = "";
@@ -292,8 +320,21 @@ function searchData(){
     }
 
     if(pattern === q){
-      const nextResult = data[i + q.length];
-      const previousResult = data[i - 1] || null;
+
+      const nextIndex = i + q.length;
+
+      // pattern + next result serial wise होना जरूरी
+      if(!isSerialWise(i, nextIndex)){
+        continue;
+      }
+
+      const nextResult = data[nextIndex];
+
+      const previousResult =
+        i > 0 &&
+        getIssueNum(data[i]) === getIssueNum(data[i - 1]) + 1
+          ? data[i - 1]
+          : null;
 
       if(nextResult){
         showTerminalThenFinal(nextResult, previousResult);
@@ -310,10 +351,11 @@ function searchData(){
 
   terminalType([
     "> SEARCHING...",
-    "> NO RESULT FOUND"
+    "> NO SERIAL WISE RESULT FOUND"
   ]);
 }
 
+// PWA SERVICE WORKER
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("service-worker.js");
 }
