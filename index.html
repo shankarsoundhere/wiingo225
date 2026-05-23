@@ -4,62 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Shankar App</title>
+<title>JSON Result Finder</title>
 
+<!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#05070d">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 body{
   margin:0;
-  font-family:Arial;
-  background:linear-gradient(135deg,#000,#123,#28a745);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-  color:white;
-  text-align:center;
+  padding:15px;
+  font-family:Arial,sans-serif;
+  background:#05070d;
+  color:#00ff99;
 }
 
 .box{
-  width:100%;
-  max-width:350px;
-  background:rgba(255,255,255,0.1);
-  padding:25px;
-  border-radius:15px;
-  backdrop-filter:blur(10px);
+  max-width:520px;
+  margin:auto;
+  background:#0b1020;
+  padding:16px;
+  border-radius:14px;
+  border:1px solid #00ff99;
 }
 
-h1{
-  margin-bottom:20px;
+input,button{
+  width:100%;
+  padding:13px;
+  margin:8px 0;
+  font-size:17px;
+  border:none;
+  border-radius:8px;
+  box-sizing:border-box;
+}
+
+input{
+  background:#000;
+  color:#00ff99;
+  border:1px solid #00ff99;
 }
 
 button{
-  width:100%;
-  padding:15px;
-  margin:10px 0;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
+  background:#00c853;
+  color:white;
   font-weight:bold;
+  cursor:pointer;
 }
 
-.viewBtn{
-  background:#28a745;
-  color:white;
+.result{
+  margin-top:15px;
+  background:#000;
+  border:1px solid #00ff99;
+  padding:15px;
+  border-radius:10px;
+  line-height:1.7;
+  font-size:16px;
+  word-break:break-word;
+  font-family:"Courier New", monospace;
+  min-height:170px;
 }
 
-.adminBtn{
-  background:#ff4b4b;
-  color:white;
+.finalResult{
+  text-align:center;
 }
 
-button:active{
-  transform:scale(0.95);
+.signalResult{
+  display:inline-block;
+  font-size:34px;
+  font-weight:bold;
+  color:#00ff99;
+  background:#001a0d;
+  border:1px solid #00ff99;
+  padding:14px 18px;
+  border-radius:8px;
+  animation: signalGlow 1s infinite;
+}
+
+.periodText{
+  margin-top:18px;
+  font-size:20px;
+  color:#ffffff;
+}
+
+@keyframes signalGlow{
+
+  0%{
+    opacity:.35;
+    transform:scale(.98);
+    box-shadow:0 0 3px #00ff99;
+  }
+
+  50%{
+    opacity:1;
+    transform:scale(1);
+    box-shadow:
+      0 0 20px #00ff99,
+      0 0 45px #00ff99;
+  }
+
+  100%{
+    opacity:.35;
+    transform:scale(.98);
+    box-shadow:0 0 3px #00ff99;
+  }
+
 }
 </style>
 </head>
@@ -67,23 +117,326 @@ button:active{
 <body>
 
 <div class="box">
-  <h1>Rohit कुमार</h1>
 
-  <button class="viewBtn" onclick="openView()">View Page</button>
-  <button class="adminBtn" onclick="openAdmin()">Admin Panel</button>
+  <input type="file" id="jsonFile" accept=".json">
+
+  <input
+    type="text"
+    id="searchBox"
+    placeholder="51606 या 112 या 506"
+  >
+
+  <button onclick="searchData()">
+    SEARCH RESULT
+  </button>
+
+  <div class="result" id="resultBox">
+    UPLOAD JSON FILE...
+  </div>
+
 </div>
 
 <script>
-function openView(){
-  location.href = "view.html";   // अपना view page
+
+let data = [];
+let typingTimer = null;
+
+// ======================
+// JSON LOAD
+// ======================
+
+document
+.getElementById("jsonFile")
+.addEventListener("change", function(e){
+
+  const file = e.target.files[0];
+
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(event){
+
+    try{
+
+      data = JSON.parse(event.target.result);
+
+      if(!Array.isArray(data)){
+        throw new Error("JSON Array नहीं है");
+      }
+
+      data = data.filter(function(item){
+
+        return item.issueNumber !== undefined
+        && item.number !== undefined;
+
+      });
+
+      // AUTO SORT
+      data.sort(function(a,b){
+
+        return Number(a.issueNumber)
+        - Number(b.issueNumber);
+
+      });
+
+      terminalType([
+        "> लोड हो रहा है सर",
+        "> TOTAL RECORDS: " + data.length,
+        "> SYSTEM READY..."
+      ]);
+
+    }catch(err){
+
+      terminalType([
+        "> ERROR: INVALID JSON FILE"
+      ]);
+
+    }
+
+  };
+
+  reader.readAsText(file);
+
+});
+
+// ======================
+// BIG / SMALL
+// ======================
+
+function getBigSmall(num){
+
+  num = Number(num);
+
+  if(num >= 5){
+    return "BIG";
+  }else{
+    return "SMALL";
+  }
+
 }
 
-function openAdmin(){
-  location.href = "admin.html"; // अपना admin page
+// ======================
+// TERMINAL EFFECT
+// ======================
+
+function terminalType(lines){
+
+  const box =
+  document.getElementById("resultBox");
+
+  if(typingTimer){
+    clearTimeout(typingTimer);
+  }
+
+  box.innerHTML = "";
+
+  let text = lines.join("\n");
+
+  let i = 0;
+
+  function typing(){
+
+    if(i < text.length){
+
+      box.innerHTML +=
+      text.charAt(i) === "\n"
+      ? "<br>"
+      : text.charAt(i);
+
+      i++;
+
+      typingTimer =
+      setTimeout(typing,15);
+
+    }
+
+  }
+
+  typing();
+
 }
+
+// ======================
+// FINAL RESULT
+// ======================
+
+function showFinalOnly(item){
+
+  const number =
+  String(item.number);
+
+  const bigSmall =
+  getBigSmall(number);
+
+  const color =
+  String(item.color || "")
+  .toUpperCase();
+
+  document
+  .getElementById("resultBox")
+  .innerHTML = `
+
+    <div class="finalResult">
+
+      <div class="signalResult">
+        ${number}
+        |
+        ${bigSmall}
+        |
+        ${color}
+      </div>
+
+      <div class="periodText">
+        PERIOD:
+        ${item.issueNumber}
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+// ======================
+// SEARCH EFFECT
+// ======================
+
+function showTerminalThenFinal(item){
+
+  terminalType([
+    "> CONNECTING DATABASE...",
+    "> MATCH FOUND...",
+    "> DECODING SIGNAL...",
+    "> GENERATING RESULT..."
+  ]);
+
+  setTimeout(function(){
+
+    showFinalOnly(item);
+
+  },1600);
+
+}
+
+// ======================
+// SEARCH
+// ======================
+
+function searchData(){
+
+  const q =
+  document
+  .getElementById("searchBox")
+  .value
+  .trim();
+
+  if(data.length === 0){
+
+    terminalType([
+      "> ERROR: UPLOAD JSON FILE"
+    ]);
+
+    return;
+  }
+
+  if(q === ""){
+
+    terminalType([
+      "> ERROR: ENTER VALUE"
+    ]);
+
+    return;
+  }
+
+  // ======================
+  // ISSUE SEARCH
+  // ======================
+
+  if(q.length >= 4){
+
+    const issueMatch =
+    data.find(function(item){
+
+      return String(item.issueNumber)
+      .endsWith(q);
+
+    });
+
+    if(issueMatch){
+
+      showTerminalThenFinal(issueMatch);
+
+      return;
+    }
+
+  }
+
+  // ======================
+  // PATTERN SEARCH
+  // ======================
+
+  for(
+    let i = 0;
+    i <= data.length - q.length - 1;
+    i++
+  ){
+
+    let pattern = "";
+
+    for(let j = 0; j < q.length; j++){
+
+      pattern +=
+      String(data[i + j].number);
+
+    }
+
+    if(pattern === q){
+
+      const nextResult =
+      data[i + q.length];
+
+      if(nextResult){
+
+        showTerminalThenFinal(
+          nextResult
+        );
+
+      }else{
+
+        terminalType([
+          "> PATTERN FOUND",
+          "> NEXT RESULT NOT AVAILABLE"
+        ]);
+
+      }
+
+      return;
+
+    }
+
+  }
+
+  terminalType([
+    "> SEARCHING...",
+    "> NO RESULT FOUND"
+  ]);
+
+}
+
+// ======================
+// PWA SERVICE WORKER
+// ======================
+
+if("serviceWorker" in navigator){
+
+  navigator
+  .serviceWorker
+  .register("service-worker.js");
+
+}
+
 </script>
-
-<script src="pwa.js"></script>
 
 </body>
 </html>
