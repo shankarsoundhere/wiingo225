@@ -1,10 +1,11 @@
 {
-  "name": "Colur",
-  "short_name": "Colur",
-  "start_url": "/wiingo225/",
+  "name": "panel",
+  "short_name": "panel",
+  "start_url": "/wingo225/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
